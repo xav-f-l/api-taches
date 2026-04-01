@@ -11,7 +11,7 @@ tasks = [
 def get_tasks():
     return jsonify(tasks)
 
-@app.route("/taches", methods=["POST"])
+@app.route("/tasks", methods=["POST"])
 def add_task():
     data = request.get_json()
 
@@ -26,7 +26,7 @@ def add_task():
     tasks.append(new_task)
     return jsonify(new_task), 201
 
-@app.route("/taches/<int:id>", methods=["PUT"])
+@app.route("/tasks/<int:id>", methods=["PUT"])
 def update_task(id):
     data = request.get_json()
 
