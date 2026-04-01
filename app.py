@@ -11,23 +11,34 @@ tasks = [
 def get_tasks():
     return jsonify(tasks)
 
-@app.route("/tasks", methods=["POST"])
+@app.route("/taches", methods=["POST"])
 def add_task():
-    data = request.json
+    data = request.get_json()
+
+    if not data or "title" not in data:
+        return jsonify({"error": "JSON invalide"}), 400
+
     new_task = {
         "id": len(tasks) + 1,
         "title": data["title"]
     }
+
     tasks.append(new_task)
     return jsonify(new_task), 201
 
-@app.route("/tasks/<int:id>", methods=["PUT"])
+@app.route("/taches/<int:id>", methods=["PUT"])
 def update_task(id):
+    data = request.get_json()
+
+    if not data or "title" not in data:
+        return jsonify({"error": "JSON invalide"}), 400
+
     for task in tasks:
         if task["id"] == id:
-            task["title"] = request.json["title"]
+            task["title"] = data["title"]
             return jsonify(task)
-    return "Not found", 404
+
+    return jsonify({"error": "Not found"}), 404
 
 @app.route("/tasks/<int:id>", methods=["DELETE"])
 def delete_task(id):
