@@ -15,12 +15,19 @@ def home():
 def get_tasks():
     return jsonify(tasks)
 
-@app.route("/tasks", methods=["POST"])
+@app.route("/taches", methods=["POST"])
 def add_task():
-    data = request.get_json()
+    data = request.get_json(silent=True)
+
+    # Si pas JSON → essayer form-data ou raw
+    if not data:
+        data = request.form or request.data
+
+        if isinstance(data, bytes):
+            data = {"title": data.decode("utf-8")}
 
     if not data or "title" not in data:
-        return jsonify({"error": "JSON invalide"}), 400
+        return jsonify({"error": "Envoyer un champ 'title'"}), 400
 
     new_task = {
         "id": len(tasks) + 1,
@@ -30,16 +37,19 @@ def add_task():
     tasks.append(new_task)
     return jsonify(new_task), 201
 
-@app.route("/tasks/<int:id>", methods=["PUT"])
+@app.route("/taches/<int:id>", methods=["PUT"])
 def update_task(id):
-    data = request.get_json()
+    data = request.get_json(silent=True)
 
-    if not data or "title" not in data:
-        return jsonify({"error": "JSON invalide"}), 400
+    if not data:
+        data = request.form or request.data
+
+        if isinstance(data, bytes):
+            data = {"title": data.decode("utf-8")}
 
     for task in tasks:
         if task["id"] == id:
-            task["title"] = data["title"]
+            task["title"] = data.get("title", task["title"])
             return jsonify(task)
 
     return jsonify({"error": "Not found"}), 404
