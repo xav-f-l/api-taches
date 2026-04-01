@@ -7,6 +7,10 @@ tasks = [
     {"id": 1, "title": "Première tâche"}
 ]
 
+@app.route("/")
+def home():
+    return "API TACHES OK"
+    
 @app.route("/tasks", methods=["GET"])
 def get_tasks():
     return jsonify(tasks)
