@@ -4,7 +4,7 @@ import os
 
 app = Flask(__name__)
 
-DATABASE_URL = os.environ.get("DATABASE_URL")
+DATABASE_URL = os.environ.get("postgresql://db_taches_user:hk3qStfHfDEdp6IAkNjl80DGInJn1Slm@dpg-d772gc5m5p6s73a8pun0-a/db_taches")
 conn = psycopg2.connect(DATABASE_URL)
 cur = conn.cursor()
 
