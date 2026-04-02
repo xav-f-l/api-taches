@@ -8,6 +8,15 @@ DATABASE_URL = os.environ.get("DATABASE_URL")
 conn = psycopg2.connect(DATABASE_URL)
 cur = conn.cursor()
 
+cur.execute("""
+CREATE TABLE IF NOT EXISTS tasks (
+    id SERIAL PRIMARY KEY,
+    title TEXT NOT NULL
+);
+""")
+
+conn.commit()
+
 # 🔹 GET toutes les tâches
 @app.route("/tasks", methods=["GET"])
 def get_tasks():
