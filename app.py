@@ -1,64 +1,68 @@
 from flask import Flask, request, jsonify
+import psycopg2
 import os
 
 app = Flask(__name__)
 
-tasks = [
-    {"id": 1, "title": "Première tâche"}
-]
+# 🔗 Connexion DB
+DATABASE_URL = os.environ.get("DATABASE_URL")
+
+conn = psycopg2.connect(DATABASE_URL)
+cur = conn.cursor()
+
+# 🔹 créer table
+cur.execute("""
+CREATE TABLE IF NOT EXISTS tasks (
+    id SERIAL PRIMARY KEY,
+    title TEXT NOT NULL
+)
+""")
+conn.commit()
 
 @app.route("/")
 def home():
-    return "API TACHES OK"
-    
+    return "API + DB OK"
+
+# 🔹 GET
 @app.route("/tasks", methods=["GET"])
 def get_tasks():
-    return jsonify(tasks)
+    cur.execute("SELECT * FROM tasks")
+    rows = cur.fetchall()
+    return jsonify([{"id": r[0], "title": r[1]} for r in rows])
 
-@app.route("/taches", methods=["POST"])
+# 🔹 POST
+@app.route("/tasks", methods=["POST"])
 def add_task():
-    data = request.get_json(silent=True)
+    title = request.json["title"]
 
-    # Si pas JSON → essayer form-data ou raw
-    if not data:
-        data = request.form or request.data
+    cur.execute(
+        "INSERT INTO tasks (title) VALUES (%s) RETURNING id",
+        (title,)
+    )
+    new_id = cur.fetchone()[0]
+    conn.commit()
 
-        if isinstance(data, bytes):
-            data = {"title": data.decode("utf-8")}
+    return jsonify({"id": new_id, "title": title})
 
-    if not data or "title" not in data:
-        return jsonify({"error": "Envoyer un champ 'title'"}), 400
-
-    new_task = {
-        "id": len(tasks) + 1,
-        "title": data["title"]
-    }
-
-    tasks.append(new_task)
-    return jsonify(new_task), 201
-
-@app.route("/taches/<int:id>", methods=["PUT"])
+# 🔹 PUT
+@app.route("/tasks/<int:id>", methods=["PUT"])
 def update_task(id):
-    data = request.get_json(silent=True)
+    title = request.json["title"]
 
-    if not data:
-        data = request.form or request.data
+    cur.execute(
+        "UPDATE tasks SET title=%s WHERE id=%s",
+        (title, id)
+    )
+    conn.commit()
 
-        if isinstance(data, bytes):
-            data = {"title": data.decode("utf-8")}
+    return jsonify({"id": id, "title": title})
 
-    for task in tasks:
-        if task["id"] == id:
-            task["title"] = data.get("title", task["title"])
-            return jsonify(task)
-
-    return jsonify({"error": "Not found"}), 404
-
+# 🔹 DELETE
 @app.route("/tasks/<int:id>", methods=["DELETE"])
 def delete_task(id):
-    global tasks
-    tasks = [t for t in tasks if t["id"] != id]
+    cur.execute("DELETE FROM tasks WHERE id=%s", (id,))
+    conn.commit()
+
     return "Deleted"
 
-if __name__ == "__main__":
-    app.run(host="0.0.0.0", port=int(os.environ.get("PORT", 3000)))
+app.run(host="0.0.0.0", port=int(os.environ.get("PORT", 3000)))
